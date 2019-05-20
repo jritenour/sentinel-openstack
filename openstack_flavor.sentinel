@@ -1,0 +1,33 @@
+import "tfplan"
+
+# Get all OpenStack instances from all modules
+get_os_instances = func() {
+    instances = []
+    for tfplan.module_paths as path {
+        instances += values(tfplan.module(path).resources.openstack_compute_instance_v2) else []
+    }
+    return instances
+}
+
+# Allowed Types
+allowed_types = [
+  "m1.small",
+  "m1.medium",
+  "m1.tiny",
+]
+
+os_instances = get_os_instances()
+
+# Rule to restrict instance types
+instance_type_allowed = rule {
+    all os_instances as _, instances {
+      all instances as index, r {
+  	   r.applied.flavor_name in allowed_types
+      }
+    }
+}
+  
+# Main rule that requires other rules to be true
+main = rule {
+  (instance_type_allowed) else true
+}
