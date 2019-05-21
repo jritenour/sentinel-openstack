@@ -1,0 +1,18 @@
+import "tfplan"
+
+get_os_instances = func() {
+    instances = []
+    for tfplan.module_paths as path {
+        instances += values(tfplan.module(path).resources.openstack_compute_instance_v2) else []
+    }
+    return instances
+}
+ 
+os_instances = get_os_instances()
+#print(os_instances)
+#print (length(os_instances[0]))
+instance_limit = rule {
+    (length(os_instances[0])) <= 10
+}
+  
+main = rule { (instance_limit) else true }
