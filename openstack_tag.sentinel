@@ -1,0 +1,26 @@
+import "tfplan"
+
+# Get all OpenStack instances from all modules
+get_os_instances = func() {
+    instances = []
+    for tfplan.module_paths as path {
+        instances += values(tfplan.module(path).resources.openstack_compute_instance_v2) else []
+    }
+    return instances
+}
+
+os_instances = get_os_instances()
+
+# Rule to restrict instance types
+instance_tag_required = rule {
+    all os_instances as _, instances {
+      all instances as index, r {
+  	   r.applied.metadata.env == "prod"
+      }
+    }
+}
+  
+# Main rule that requires other rules to be true
+main = rule {
+  (instance_tag_required) else true
+}
